@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Dashboard</title>
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    function displaymain(element, userid) {
+        var url = "/chatter/" + userid + "/";
+        $.ajax({
+            url: url,
+            type: 'GET',
+            traditional: true,
+            data: {},
+            success: function(response){
+                response = JSON.parse(response)
+                if (response.status) {
+                    console.log(response.data)
+                }
+            }
+        })
+    }
+
+
+
+//#################
+
+    // // Note that the path doesn't matter for routing; any WebSocket
+    // // connection gets bumped over to WebSocket consumers
+    // socket = new WebSocket("ws://" + window.location.host + "/chat/");
+    // socket.onmessage = function(e) {
+    //     alert(e.data);
+    // }
+    // socket.onopen = function() {
+    //     socket.send("Welcome to The CHATBOX :)");
+    // }
+    // // Call onopen directly if socket is already open
+    // if (socket.readyState == WebSocket.OPEN) socket.onopen();
+
+    // const webSocketBridge = new channels.WebSocketBridge();
+    // webSocketBridge.connect('/ws/');
+    // webSocketBridge.listen(function(action, stream) {
+    //     console.log(action, stream);
+    // });
+
+    // webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
+
+    // webSocketBridge.socket.addEventListener('open', function() {
+    //     console.log("Connected to WebSocket");
+    // })
+</script>
+{% endblock %}
+
+
+{% block body %}
+    <body>
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand">The CHATBOX</a>
+                </div>
+                <ul style="float:right" class="nav navbar-nav">
+                    <a class="navbar-brand" href="/logout/"><small>Logout</small></a>
+                </ul>
+            </div>
+        </nav>
+        <!--<div style="padding:20px 10px 70px 10px;">
+            <div class="col-md-2 col-md-offset-1" style="padding-top:5px">
+                <strong>Your Friends</strong>
+                {% for i in users %}
+                    {% if not i == user %}
+                        <div style="padding-top:10px; padding-bottom:10px">
+                            <a class="btn btn-default btn-sm btn-block" style="text-align:left;"><span class="glyphicon glyphicon-chevron-right"></span> {{ i.username }}</a>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>-->
+        <div>
+            <div class="modal__dialog">
+                <div class="modal__content chat">
+                <div class="modal__sidebar">
+                    <div class="chat__search search">
+                    <div class="search">
+                        <div class="search__icon">
+                        <i class="fa fa-search" aria-hidden="true"></i>
+                        </div>
+                        <input type="search" class="search__input" placeholder="Search">
+                        <div class="search__icon search__icon_right">
+                        <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                    </div>
+                    {% for user in users %}
+                        <div class="chat__users">
+                        <ul class="users">
+                            <li onclick="displaymain(this, '{{ user.id }}')" id="chatter" class="users__item users__item_group">
+                            <div class="users__avatar avatar">
+                                <a class="avatar__wrap">
+                                    {{ user.first_name|slice:':1'|title }}
+                                </a>
+                            </div>
+                            <span class="users__note">{{ user.first_name|title }} {{ user.last_name }}</span>
+                            <div class="users__counter">
+                                <span class="counter">
+                                    <!--display the number of unread messages here-->
+                                </span>
+                            </div>
+                            </li>
+                            <!--<li class="users__item">-->
+                            <!--<div class="users__avatar avatar avatar_online">
+                                <a href="#" class="avatar__wrap">
+                                <img class="avatar__img" src="http://placehold.it/35x35" width="35" height="35" alt="avatar image">
+                                </a>
+                            </div>-->
+                        </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="modal__main">
+                    <div class="chatbox">
+                        <div class="chatbox__row">
+                            <div class="head">
+                            <div class="head__avatar avatar avatar_larger">
+                                <a href="#" class="avatar__wrap">
+                                    {{ user.username|slice:':1'|title }}
+                                </a>
+                            </div>
+                            <div class="head__title">{{ user.username|title }}</div>
+                            </div>
+                        </div>
+                        <div class="chatbox__row chatbox__row_fullheight">
+                            <div class="chatbox__content">
+                                {% if data %}
+                                    {% for message in data %}
+                                        <div class="message">
+                                            <div class="message__head">
+                                            <span class="message__note">{{ message.sender.first_name|title }}</span>
+                                            <span class="message__note">{{ message.created }}</span>
+                                            </div>
+                                            <div class="message__base">
+                                            <div class="message__avatar avatar">
+                                                <a href="#" class="avatar__wrap">
+                                                </a>
+                                            </div>
+                                            <div class="message__textbox">
+                                                <span class="message__text">{{ message.message|safe }}</span>
+                                            </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for message in messages %}
+                                        {% if message.reciever.username == sender %}
+                                            <div class="message">
+                                                <div class="message__head">
+                                                <span class="message__note">{{ message.sender.first_name|title }}</span>
+                                                <span class="message__note">{{ message.created_at }}</span>
+                                                </div>
+                                                <div class="message__base">
+                                                <div class="message__avatar avatar">
+                                                    <a href="#" class="avatar__wrap"></a>
+                                                </div>
+                                                <div class="message__textbox">
+                                                    <span class="message__text">{{ message.message|safe }}</span>
+                                                </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="chatbox__row">
+                            <div class="enter">
+                                <div class="enter__submit">
+                                    <button class="button button_id_submit" type="submit">
+                                        <i class="fa fa-paper-plane" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div class="enter__textarea">
+                                    <textarea name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
+                                </div>
+                                <div class="enter__icons">
+                                    <a href="#" class="enter__icon">
+                                    <i class="fa fa-paperclip" aria-hidden="true"></i>
+                                    </a>
+                                    <a href="#" class="enter__icon">
+                                    <i class="fa fa-smile-o" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+{% endblock %}

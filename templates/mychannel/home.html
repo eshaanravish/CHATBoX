@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Home</title>
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    $(document).ready(function(){
+        $("#id_email").blur(function() {
+            if ($("#id_email").val() == "") {
+                document.getElementById("id_mail").innerHTML = "*Email field required!";
+            } else if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(signupForm.email.value)) {
+                var url = "user_check/";
+                style = "background-color: #2a7d31";
+                style_signup = "background-color: #d80400";
+                $.ajax({
+                    url: url,
+                    type: "GET",
+                    data: {"email": $("#id_email").val()},
+                    success: function(response){
+                        response = JSON.parse(response)
+                        if (response.status) {
+                            $("#login_button").html('<span class="glyphicon glyphicon-ok"></span> Login')
+                        }
+                        else {
+                            $("#login_button").html('<span class="glyphicon glyphicon-bookmark"></span> SignUp')
+                        }
+                    }
+                })
+                document.getElementById("id_mail").style.visibility = "hidden";
+            } else {
+                document.getElementById("id_mail").innerHTML = "*Enter valid Email!";
+            }
+        })
+    })
+
+
+//#################
+
+    // // Note that the path doesn't matter for routing; any WebSocket
+    // // connection gets bumped over to WebSocket consumers
+    // socket = new WebSocket("ws://" + window.location.host + "/chat/");
+    // socket.onmessage = function(e) {
+    //     alert(e.data);
+    // }
+    // socket.onopen = function() {
+    //     socket.send("Welcome to The CHATBOX :)");
+    // }
+    // // Call onopen directly if socket is already open
+    // if (socket.readyState == WebSocket.OPEN) socket.onopen();
+
+    // const webSocketBridge = new channels.WebSocketBridge();
+    // webSocketBridge.connect('/ws/');
+    // webSocketBridge.listen(function(action, stream) {
+    //     console.log(action, stream);
+    // });
+
+    // webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
+
+    // webSocketBridge.socket.addEventListener('open', function() {
+    //     console.log("Connected to WebSocket");
+    // })
+</script>
+{% endblock %}
+
+{% block body %}
+    <body>
+        <h1 id="font" class="font-bold" style="text-align:center; margin-top:80px">
+            CHATBOX
+        </h1>
+        <div class="container" style="margin-top:20px">
+            <div class="row">
+                <div class="col-sm-8 col-sm-offset-2">
+                    <div class="jumbotron">
+                        <div class="row">
+                            <div class="col-sm-6" style="border-right:1px groove">
+                                <div>
+                                    <br>
+                                    <form name="signupForm" action="" method="POST">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <div class="control-label">
+                                                {{ form.email }}
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="control-label">
+                                                {{ form.password }}
+                                            </div>
+                                        </div>
+                                        <br>
+                                        <button id="login_button" type="submit" style="background-color:#8689d8;" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-bookmark"></span> SignUp/LogIn</button>
+                                        <small id="id_mail" style="color:red">{{ error_message }}</small>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <br>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+{% endblock %}
