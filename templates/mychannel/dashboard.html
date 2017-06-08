@@ -6,21 +6,55 @@
 
 {% block script %}
 <script type="text/javascript">
-    function displaymain(element, userid) {
-        var url = "/chatter/" + userid + "/";
+    function displaymain(element, userid, username) {
+        var url = "/dashboard/";
         $.ajax({
             url: url,
             type: 'GET',
             traditional: true,
-            data: {},
+            data: {'userid': userid},
             success: function(response){
                 response = JSON.parse(response)
                 if (response.status) {
+                    $("#main_head").html(response.data[0].toUpperCase())
+                    $("#main_title").html(response.data[1].toUpperCase())
                     console.log(response.data)
                 }
             }
         })
     }
+
+    function entermessage(element) {
+        if (element.keyCode === 13) {
+            // Note that the path doesn't matter for routing; any WebSocket
+            // connection gets bumped over to WebSocket consumers
+            socket = new WebSocket("ws://" + window.location.host + "/chat/");
+            socket.onmessage = function(e) {
+                alert(e.data);
+            }
+            socket.onopen = function() {
+                socket.send("Welcome to The CHATBOX :)");
+            }
+            // Call onopen directly if socket is already open
+            if (socket.readyState == WebSocket.OPEN) socket.onopen();
+            }
+        }
+
+            // *****Via websocketbridge*****
+
+            // const webSocketBridge = new channels.WebSocketBridge();
+            // webSocketBridge.connect('/ws/');
+            // webSocketBridge.listen(function(action, stream) {
+            //     console.log(action, stream);
+            // });
+
+            // webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
+
+            // webSocketBridge.socket.addEventListener('open', function() {
+            //     console.log("Connected to WebSocket");
+    //         })
+    //     }
+    // }
 
 
 
@@ -97,11 +131,11 @@
                         <ul class="users">
                             <li onclick="displaymain(this, '{{ user.id }}')" id="chatter" class="users__item users__item_group">
                             <div class="users__avatar avatar">
-                                <a class="avatar__wrap">
+                                <a id="user_avatar" class="avatar__wrap">
                                     {{ user.first_name|slice:':1'|title }}
                                 </a>
                             </div>
-                            <span class="users__note">{{ user.first_name|title }} {{ user.last_name }}</span>
+                            <span id="user_avatar_name" class="users__note">{{ user.first_name|title }} {{ user.last_name }}</span>
                             <div class="users__counter">
                                 <span class="counter">
                                     <!--display the number of unread messages here-->
@@ -123,25 +157,43 @@
                         <div class="chatbox__row">
                             <div class="head">
                             <div class="head__avatar avatar avatar_larger">
-                                <a href="#" class="avatar__wrap">
-                                    {{ user.username|slice:':1'|title }}
+                                <a id="main_head" href="#" class="avatar__wrap">
+                                    {{ friend_top.first_name|slice:':1'|upper }}
                                 </a>
                             </div>
-                            <div class="head__title">{{ user.username|title }}</div>
+                            <div id="main_title" class="head__title">{{ friend_top.first_name|upper }}</div>
                             </div>
                         </div>
                         <div class="chatbox__row chatbox__row_fullheight">
                             <div class="chatbox__content">
-                                {% if data %}
-                                    {% for message in data %}
+                                {% for message in messages %}
+                                    {% if message.sender.username == user.username %}
+                                        <div class="message">
+                                            <div class="message__head">
+                                            <span class="message__note">{{ message.created_at }}</span>
+                                            <span class="message__note">{{ message.sender.first_name|title }}</span>
+                                            </div>
+                                            <div class="message__base">
+                                            <div class="message__textbox" style="margin-right:16px">
+                                                <span class="message__text">{{ message.message|safe }}</span>
+                                            </div>
+                                            <div class="message__avatar avatar">
+                                                <a href="#" class="avatar__wrap">
+                                                    {{ message.sender.first_name|slice:':1'|title }}
+                                                </a>
+                                            </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
                                         <div class="message">
                                             <div class="message__head">
                                             <span class="message__note">{{ message.sender.first_name|title }}</span>
-                                            <span class="message__note">{{ message.created }}</span>
+                                            <span class="message__note">{{ message.created_at }}</span>
                                             </div>
                                             <div class="message__base">
                                             <div class="message__avatar avatar">
                                                 <a href="#" class="avatar__wrap">
+                                                    {{ message.sender.first_name|slice:':1'|title }}
                                                 </a>
                                             </div>
                                             <div class="message__textbox">
@@ -149,27 +201,8 @@
                                             </div>
                                             </div>
                                         </div>
-                                    {% endfor %}
-                                {% else %}
-                                    {% for message in messages %}
-                                        {% if message.reciever.username == sender %}
-                                            <div class="message">
-                                                <div class="message__head">
-                                                <span class="message__note">{{ message.sender.first_name|title }}</span>
-                                                <span class="message__note">{{ message.created_at }}</span>
-                                                </div>
-                                                <div class="message__base">
-                                                <div class="message__avatar avatar">
-                                                    <a href="#" class="avatar__wrap"></a>
-                                                </div>
-                                                <div class="message__textbox">
-                                                    <span class="message__text">{{ message.message|safe }}</span>
-                                                </div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
+                                    {% endif %}
+                                {% endfor %}
                             </div>
                         </div>
                         <div class="chatbox__row">
@@ -180,7 +213,7 @@
                                     </button>
                                 </div>
                                 <div class="enter__textarea">
-                                    <textarea name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
+                                    <textarea onkeypress="entermessage(this)" name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
                                 </div>
                                 <div class="enter__icons">
                                     <a href="#" class="enter__icon">

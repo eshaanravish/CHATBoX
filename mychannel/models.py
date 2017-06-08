@@ -31,4 +31,4 @@ class Message(models.Model):
     sender = models.ForeignKey(User, related_name="sender")
     reciever = models.ForeignKey(User, related_name="reciever")
     message = models.CharField(max_length=1000, blank=True, null=True)
-    created_at = models.DateField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)

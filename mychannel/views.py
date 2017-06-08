@@ -11,7 +11,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.forms.models import model_to_dict
-
+from django.db.models import Q
 from django.contrib.auth.models import User
 
 from mychannel.models import Message
@@ -46,19 +46,49 @@ def homepage(request):
 
 @login_required(login_url="/login/")
 def dashboard(request):
-    login_user = request.user.id
-    messages = Message.objects.all().order_by('-created_at')
-    users = []
-    all_users = User.objects.all()
-    for i in all_users:
-        if i == request.user:
-            continue
-        elif i == User.objects.get(is_superuser=True):
-            continue
-        else:
-            users.append(i)
-    msg_sender = messages[0].sender
-    return render(request, 'mychannel/dashboard.html', {'users': users, 'messages': messages, 'sender': msg_sender })
+    login_user = request.user
+    if request.is_ajax():
+        user_id = request.GET.get("userid", "")
+        user = User.objects.get(pk=user_id)
+        messages = Message.objects.filter(
+            Q (sender=login_user, reciever=user) |
+            Q (sender=user, reciever=login_user)).order_by("created_at")
+        message_all = []
+        message_content = []
+        message_all.append(user.first_name[0])
+        message_all.append(user.first_name)
+        message_all.append(user.last_name)
+        message_all.append(user.username)
+        for item in messages:
+            message_content.append(item.sender.first_name[0])
+            message_content.append(item.sender.first_name)
+            message_content.append(item.sender.last_name)
+            message_content.append(item.sender.username)
+            message_content.append(item.reciever.first_name[0])
+            message_content.append(item.reciever.first_name)
+            message_content.append(item.reciever.last_name)
+            message_content.append(item.reciever.username)
+            message_content.append(item.message)
+            message_content.append(item.created_at.isoformat())
+            message_all.append(message_content)
+        response = {'status': True, 'data': message_all}
+        return HttpResponse(json.dumps(response))
+    else:
+        login_user = request.user
+        users = []
+        all_users = User.objects.all()
+        for i in all_users:
+            if i == request.user:
+                continue
+            elif i == User.objects.get(is_superuser=True):
+                continue
+            else:
+                users.append(i)
+        friend = users[0]
+        messages = Message.objects.filter(
+            Q (sender=login_user, reciever=friend) |
+            Q (sender=friend, reciever=login_user)).order_by("created_at")
+        return render(request, 'mychannel/dashboard.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
 
 @login_required(login_url="/login/")
 def chatter(request, user_id):
