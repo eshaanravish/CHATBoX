@@ -37,10 +37,10 @@ def homepage(request):
                     password=form.cleaned_data['password'],
                 )
                 login(request, user)
-                return render(request, 'mychannel/dashboard.html', {'users': users})
+                return HttpResponseRedirect(reverse('dashboard'))
         else:
             error_message = "Please fill the valid details."
-            return render(request, 'mychannel/dashboard.html', {'form': form, 'error_message': error_message})
+            return render(request, 'mychannel/home.html', {'form': form, 'error_message': error_message})
     else:
         error_message = ""
         form = UserForm(request.POST, use_required_attribute= False)
@@ -48,8 +48,8 @@ def homepage(request):
 
 @login_required(login_url="/login/")
 def dashboard(request):
-    login_user = request.user
     if request.is_ajax():
+        login_user = request.user
         user_id = request.GET.get("userid", "")
         user = User.objects.get(pk=user_id)
         messages = Message.objects.filter(
@@ -90,7 +90,90 @@ def dashboard(request):
         messages = Message.objects.filter(
             Q (sender=login_user, reciever=friend) |
             Q (sender=friend, reciever=login_user)).order_by("created_at")
-        return render(request, 'mychannel/dashboard_global.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
+        return render(request, 'mychannel/dashboard.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
+
+
+@login_required(login_url="/login/")
+def msg_sent(request):
+    if request.is_ajax():
+        login_user = request.user
+        user_id = request.GET.get("user_id", "")
+        msg = request.GET.get("message", "")
+        user = User.objects.get(id=user_id)
+        msg = Message.objects.create(
+            sender=login_user,
+            reciever=user,
+            message=msg,
+        )
+        created = msg.created_at.isoformat()
+        response = {'status': True, 'data': created}
+        return HttpResponse(json.dumps(response))
+    else:
+        return Http404
+
+
+@login_required(login_url="/login/")
+def msg_get(request):
+    if request.is_ajax():
+        login_user = request.user
+        user_id = request.GET.get("user_id", "")
+        msg = request.GET.get("message", "")
+        user = User.objects.get(pk=user_id)
+        msg = Message.objects.create(
+            sender=user,
+            reciever=login_user,
+            message=msg,
+        )
+        created = msg.created_at.isoformat()
+        response = {'status': True, 'data': created}
+        return HttpResponse(json.dumps(response))
+    else:
+        return Http404
+
+
+@login_required(login_url="/login/")
+def fetch_user(request):
+    if request.is_ajax():
+        login_user = request.user
+        user_id = request.GET.get("user_id", "")
+        user = User.objects.get(pk=user_id)
+        messages = Message.objects.filter(
+            Q (sender=login_user, reciever=user) |
+            Q (sender=user, reciever=login_user)).order_by("created_at")
+        all_messages = []
+        for msg in messages:
+            message = []
+            message.append(msg.sender.first_name)
+            message.append(msg.reciever.first_name)
+            message.append(msg.message)
+            message.append(msg.created_at.isoformat())
+            all_messages.append(message)
+        response = {'status': True, 'data': all_messages}
+        return HttpResponse(json.dumps(response))
+    else:
+        return Http404
+    
+
+
+@login_required(login_url="/login/")
+def dashboard_global(request):
+    login_user = request.user
+    users = []
+    all_users = User.objects.all()
+    for i in all_users:
+        if i == request.user:
+            continue
+        elif i == User.objects.get(is_superuser=True):
+            continue
+        else:
+            users.append(i)
+    friend = users[0]
+    messages = Message.objects.filter(
+        Q (sender=login_user, reciever=friend) |
+        Q (sender=friend, reciever=login_user)).order_by("created_at")
+    return render(request, 'mychannel/dashboard_global.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
+
+
 
 @login_required(login_url="/login/")
 def chatter(request, user_id):

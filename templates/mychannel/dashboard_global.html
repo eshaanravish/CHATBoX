@@ -10,14 +10,13 @@
         const webSocketBridge = new channels.WebSocketBridge();
         webSocketBridge.connect('/ws/');
         webSocketBridge.listen(function(action, stream) {
-            console.log(action, stream);
             var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + action.user_name + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + action.message +  "</span></div></div></div>"
             $("#msg_content").append(content);
         });
 
-        // webSocketBridge.demultiplex('thisstream', function(payload, stream) {
-        //     console.log(payload, stream)
-        // });
+        webSocketBridge.demultiplex('thisstream', function(payload, stream) {
+            console.log(payload, stream)
+        });
 
         webSocketBridge.socket.addEventListener('open', function() {
             console.log("Connected to WebSocket");
@@ -32,7 +31,7 @@
                     user_name = document.getElementById("textbox").getAttribute("user-data")
                     user_initial = document.getElementById("textbox").getAttribute("user-initial")
                     msg = document.getElementById("textbox").value
-                    webSocketBridge.send({"user_name": user_name, "user_initial": user_initial, "message": msg});
+                    webSocketBridge.stream('mystream').send({"user_name": user_name, "user_initial": user_initial, "message": msg});
                     document.getElementById("textbox").value = '';
                 }
             })

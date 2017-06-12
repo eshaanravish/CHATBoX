@@ -6,83 +6,76 @@
 
 {% block script %}
 <script type="text/javascript">
-    function displaymain(element, userid, username) {
-        var url = "/dashboard/";
-        $.ajax({
-            url: url,
-            type: 'GET',
-            traditional: true,
-            data: {'userid': userid},
-            success: function(response){
-                response = JSON.parse(response)
-                if (response.status) {
-                    $("#main_head").html(response.data[0].toUpperCase())
-                    $("#main_title").html(response.data[1].toUpperCase())
-                    console.log(response.data)
-                }
-            }
+    $(document).ready(function(){
+        const webSocketBridge = new channels.WebSocketBridge();
+        webSocketBridge.connect('/ws/');
+        webSocketBridge.listen(function(action, stream) {
+            var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + action.user_name + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + action.message +  "</span></div></div></div>"
+            $("#msg_content").append(content);
+        });
+        $("#friends").each(function() {
+            $(this).click(function(e) {
+                var user_id = $(this).attr('data-href');
+                var url = "/dashboard/fetch_user/"
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    data: {"user_id": user_id},
+                    success: function(response){
+                        response = JSON.parse(response)
+                        if (response.status) {
+                            for (i = 0; i < response.data.length; i++) {
+                                // fetch the messages in json format response and then append them..
+                                var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + i.user_name + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + i.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + i.message +  "</span></div></div></div>"
+                                $("#msg_content").append(content);
+                            } 
+                        }
+                    }
+                })
+            })
         })
-    }
 
-    function entermessage(element) {
-        if (element.keyCode === 13) {
-            // Note that the path doesn't matter for routing; any WebSocket
-            // connection gets bumped over to WebSocket consumers
-            socket = new WebSocket("ws://" + window.location.host + "/chat/");
-            socket.onmessage = function(e) {
-                alert(e.data);
-            }
-            socket.onopen = function() {
-                socket.send("Welcome to The CHATBOX :)");
-            }
-            // Call onopen directly if socket is already open
-            if (socket.readyState == WebSocket.OPEN) socket.onopen();
-        }
-    }
+        webSocketBridge.socket.addEventListener('open', function() {
+            console.log("Connected to WebSocket");
+        })
 
-            // *****Via websocketbridge*****
-
-            // const webSocketBridge = new channels.WebSocketBridge();
-            // webSocketBridge.connect('/ws/');
-            // webSocketBridge.listen(function(action, stream) {
-            //     console.log(action, stream);
-            // });
-
-            // webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
-
-            // webSocketBridge.socket.addEventListener('open', function() {
-            //     console.log("Connected to WebSocket");
-    //         })
-    //     }
-    // }
+        webSocketBridge.socket.addEventListener('close', function() {
+            console.log("Disonnected from WebSocket");
+        })
 
 
+        $("#textbox").each(function() {
+            $(this).keypress(function(e) {
+                if (e.keyCode === 13) {
+                    e.preventDefault();
+                    user_name = document.getElementById("textbox").getAttribute("user-data")
+                    user_initial = document.getElementById("textbox").getAttribute("user-initial")
+                    var msg = document.getElementById("textbox").value
+                    document.getElementById("textbox").value = '';
+                    if (msg != "") {
+                        user_id = document.getElementById("textbox").getAttribute("user-id")
 
-//#################
+                        webSocketBridge.send({"user_name": user_name, "user_id": user_id, "user_initial": user_initial, "message": msg});
 
-    // // Note that the path doesn't matter for routing; any WebSocket
-    // // connection gets bumped over to WebSocket consumers
-    // socket = new WebSocket("ws://" + window.location.host + "/chat/");
-    // socket.onmessage = function(e) {
-    //     alert(e.data);
-    // }
-    // socket.onopen = function() {
-    //     socket.send("Welcome to The CHATBOX :)");
-    // }
-    // // Call onopen directly if socket is already open
-    // if (socket.readyState == WebSocket.OPEN) socket.onopen();
-
-    // const webSocketBridge = new channels.WebSocketBridge();
-    // webSocketBridge.connect('/ws/');
-    // webSocketBridge.listen(function(action, stream) {
-    //     console.log(action, stream);
-    // });
-
-    // webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
-
-    // webSocketBridge.socket.addEventListener('open', function() {
-    //     console.log("Connected to WebSocket");
-    // })
+                        var url = "/dashboard/msg_sent/";
+                        $.ajax({
+                            url: url,
+                            type: 'GET',
+                            traditional: true,
+                            data: {"user_name": user_name, "user_id": user_id, "user_initial": user_initial, "message": msg},
+                            success: function(response){
+                                response = JSON.parse(response)
+                                if (response.status) {
+                                    // $("#main_head").html(response.data[0].toUpperCase())
+                                    // $("#main_title").html(response.data[1].toUpperCase())
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+        })
+    }); 
 </script>
 {% endblock %}
 
@@ -99,18 +92,6 @@
                 </ul>
             </div>
         </nav>
-        <!--<div style="padding:20px 10px 70px 10px;">
-            <div class="col-md-2 col-md-offset-1" style="padding-top:5px">
-                <strong>Your Friends</strong>
-                {% for i in users %}
-                    {% if not i == user %}
-                        <div style="padding-top:10px; padding-bottom:10px">
-                            <a class="btn btn-default btn-sm btn-block" style="text-align:left;"><span class="glyphicon glyphicon-chevron-right"></span> {{ i.username }}</a>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-        </div>-->
         <div>
             <div class="modal__dialog">
                 <div class="modal__content chat">
@@ -129,7 +110,7 @@
                     {% for user in users %}
                         <div class="chat__users">
                         <ul class="users">
-                            <li onclick="displaymain(this, '{{ user.id }}')" id="chatter" class="users__item users__item_group">
+                            <li id="friends" data-href="{{ user.id }}" class="users__item users__item_group">
                             <div class="users__avatar avatar">
                                 <a id="user_avatar" class="avatar__wrap">
                                     {{ user.first_name|slice:':1'|title }}
@@ -163,46 +144,26 @@
                             </div>
                             <div id="main_title" class="head__title">{{ friend_top.first_name|upper }}</div>
                             </div>
+                            <div id="main_title" class="head__title">{{ message.created_at }}</div>
                         </div>
                         <div class="chatbox__row chatbox__row_fullheight">
-                            <div class="chatbox__content">
-                                {% for message in messages %}
-                                    {% if message.sender.username == user.username %}
-                                        <div class="message">
-                                            <div class="message__head">
-                                            <span class="message__note">{{ message.created_at }}</span>
-                                            <span class="message__note">{{ message.sender.first_name|title }}</span>
-                                            </div>
-                                            <div class="message__base">
-                                            <div class="message__textbox" style="margin-right:16px">
-                                                <span class="message__text">{{ message.message|safe }}</span>
-                                            </div>
-                                            <div class="message__avatar avatar">
-                                                <a href="#" class="avatar__wrap">
-                                                    {{ message.sender.first_name|slice:':1'|title }}
-                                                </a>
-                                            </div>
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <div class="message">
-                                            <div class="message__head">
-                                            <span class="message__note">{{ message.sender.first_name|title }}</span>
-                                            <span class="message__note">{{ message.created_at }}</span>
-                                            </div>
-                                            <div class="message__base">
-                                            <div class="message__avatar avatar">
-                                                <a href="#" class="avatar__wrap">
-                                                    {{ message.sender.first_name|slice:':1'|title }}
-                                                </a>
-                                            </div>
-                                            <div class="message__textbox">
-                                                <span class="message__text">{{ message.message|safe }}</span>
-                                            </div>
-                                            </div>
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
+                            <div id="msg_content" class="chatbox__content">
+                                <div class="message">
+                                    <div class="message__head">
+                                    <span class="message__note">{{ message.sender.first_name|title }}</span>
+                                    <span class="message__note">{{ message.created_at }}</span>
+                                    </div>
+                                    <div class="message__base">
+                                    <div class="message__avatar avatar">
+                                        <a href="#" class="avatar__wrap">
+                                            {{ message.sender.first_name|slice:':1'|title }}
+                                        </a>
+                                    </div>
+                                    <div class="message__textbox">
+                                        <span class="message__text">{{ message.message|safe }}</span>
+                                    </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="chatbox__row">
@@ -213,7 +174,7 @@
                                     </button>
                                 </div>
                                 <div class="enter__textarea">
-                                    <textarea onkeypress="entermessage(this)" name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
+                                    <textarea id="textbox" user-data="{{ user.first_name|upper }}" user-id="{{ user.id }}" user-initial="{{ user.first_name|slice:':1'|upper }}" name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
                                 </div>
                                 <div class="enter__icons">
                                     <a href="#" class="enter__icon">
