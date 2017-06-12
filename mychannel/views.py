@@ -31,6 +31,8 @@ def homepage(request):
             else:
                 user = User.objects.create_user(
                     username=form.cleaned_data['email'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
                     email=form.cleaned_data['email'],
                     password=form.cleaned_data['password'],
                 )
@@ -88,7 +90,7 @@ def dashboard(request):
         messages = Message.objects.filter(
             Q (sender=login_user, reciever=friend) |
             Q (sender=friend, reciever=login_user)).order_by("created_at")
-        return render(request, 'mychannel/dashboard.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
+        return render(request, 'mychannel/dashboard_global.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
 
 @login_required(login_url="/login/")
 def chatter(request, user_id):
@@ -109,7 +111,9 @@ def user_check(request):
         email = request.GET.get('email', '')
         if User.objects.filter(username=email).exists():
             user = User.objects.get(username=email)
-            response = {'status': True}
+            first_name = user.first_name
+            last_name = user.last_name
+            response = {'status': True, 'firstname': first_name, 'lastname': last_name}
             return HttpResponse(json.dumps(response))
         else:
             response = {'status': False}

@@ -356,9 +356,9 @@ button:focus {
 .message {}
 
 .message__head {
-    display: flex;
+    /*display: flex;*/
     justify-content: space-between;
-    padding: 12px 80px 10px 82px;
+    padding: 4px 80px 4px 50px;
 }
 
 .message__note {
@@ -381,13 +381,14 @@ button:focus {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    margin-left: 15px;
+    margin-left: 16px;
+    margin-right: 14px;
     width: 100%;
     min-height: 43px;
-    background-color: #f5f6fa;
-    border-radius: 9px;
-    padding: 11px 25px 12px 25px;
-    color: #6a6d77;
+    /*background-color: #f5f6fa;*/
+    /*border-radius: 9px;*/
+    padding: 4px 5px 4px 5px;
+    /*color: #6a6d77;*/
 }
 
 .message__smiley {

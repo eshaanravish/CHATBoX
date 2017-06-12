@@ -22,6 +22,8 @@
                         response = JSON.parse(response)
                         if (response.status) {
                             $("#login_button").html('<span class="glyphicon glyphicon-ok"></span> Login')
+                            $("#id_first_name").addClass('hidden')
+                            $("#id_last_name").addClass('hidden')
                         }
                         else {
                             $("#login_button").html('<span class="glyphicon glyphicon-bookmark"></span> SignUp')
@@ -86,6 +88,16 @@
                                         </div>
                                         <div class="form-group">
                                             <div class="control-label">
+                                                {{ form.first_name }}
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="control-label">
+                                                {{ form.last_name }}
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="control-label">
                                                 {{ form.password }}
                                             </div>
                                         </div>
@@ -97,6 +109,22 @@
                             </div>
                             <div class="col-sm-6">
                                 <br>
+                                <!--<form name="signupForm" action="" method="POST">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <div class="control-label">
+                                            {{ form.email }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="control-label">
+                                            {{ form.password }}
+                                        </div>
+                                    </div>
+                                    <br>
+                                    <button id="login_button" type="submit" style="background-color:#8689d8;" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-bookmark"></span> SignUp/LogIn</button>
+                                    <small id="id_mail" style="color:red">{{ error_message }}</small>
+                                </form>-->
                             </div>
                         </div>
                     </div>
