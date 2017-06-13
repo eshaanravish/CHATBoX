@@ -8,7 +8,7 @@ from .models import Message, IntegerValue
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'message', 'created_at')
+    list_display = ('sender', 'reciever', 'message', 'created_at')
 
 admin.site.register(Message, MessageAdmin)
 

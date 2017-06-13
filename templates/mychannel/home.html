@@ -21,11 +21,35 @@
                     success: function(response){
                         response = JSON.parse(response)
                         if (response.status) {
+                            var style = "background-color:#5dc566";
+                            $("#login_button").removeAttr("style")
                             $("#login_button").html('<span class="glyphicon glyphicon-ok"></span> Login')
+                            $("#login_button").attr('style', style);
                             $("#id_first_name").addClass('hidden')
                             $("#id_last_name").addClass('hidden')
+                            $("#password").removeClass('hidden')
+                            $("#password").addClass('block')
                         }
                         else {
+                            var style = "background-color:#bb99da";
+                            if ($("#password").hasClass("hidden")) {
+                                $("#password").removeClass("hidden")
+                                $("#password").addClass("block")
+                            }
+                            if ($("#first_name").hasClass("hidden")) {
+                                $("#first_name").removeClass("hidden")
+                                $("#first_name").addClass("block")
+                                $("#last_name").removeClass("hidden")
+                                $("#last_name").addClass("block")
+                            }
+                            if ($("#id_first_name").hasClass('hidden')) {
+                                $("#id_first_name").removeClass('hidden')
+                                $("#id_last_name").removeClass('hidden')
+                                $("#id_first_name").addClass('block')
+                                $("#id_last_name").addClass('block')
+                            }
+                            $("#login_button").removeAttr("style")
+                            $("#login_button").attr('style', style);
                             $("#login_button").html('<span class="glyphicon glyphicon-bookmark"></span> SignUp')
                         }
                     }
@@ -36,33 +60,6 @@
             }
         })
     })
-
-
-//#################
-
-    // // Note that the path doesn't matter for routing; any WebSocket
-    // // connection gets bumped over to WebSocket consumers
-    // socket = new WebSocket("ws://" + window.location.host + "/chat/");
-    // socket.onmessage = function(e) {
-    //     alert(e.data);
-    // }
-    // socket.onopen = function() {
-    //     socket.send("Welcome to The CHATBOX :)");
-    // }
-    // // Call onopen directly if socket is already open
-    // if (socket.readyState == WebSocket.OPEN) socket.onopen();
-
-    // const webSocketBridge = new channels.WebSocketBridge();
-    // webSocketBridge.connect('/ws/');
-    // webSocketBridge.listen(function(action, stream) {
-    //     console.log(action, stream);
-    // });
-
-    // webSocketBridge.send({prop1: 'value1', prop2: 'value1'});
-
-    // webSocketBridge.socket.addEventListener('open', function() {
-    //     console.log("Connected to WebSocket");
-    // })
 </script>
 {% endblock %}
 
@@ -76,40 +73,9 @@
                 <div class="col-sm-8 col-sm-offset-2">
                     <div class="jumbotron">
                         <div class="row">
-                            <div class="col-sm-6" style="border-right:1px groove">
-                                <div>
-                                    <br>
-                                    <form name="signupForm" action="" method="POST">
-                                        {% csrf_token %}
-                                        <div class="form-group">
-                                            <div class="control-label">
-                                                {{ form.email }}
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="control-label">
-                                                {{ form.first_name }}
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="control-label">
-                                                {{ form.last_name }}
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="control-label">
-                                                {{ form.password }}
-                                            </div>
-                                        </div>
-                                        <br>
-                                        <button id="login_button" type="submit" style="background-color:#8689d8;" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-bookmark"></span> SignUp/LogIn</button>
-                                        <small id="id_mail" style="color:red">{{ error_message }}</small>
-                                    </form>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
+                            <div style="width:65%; margin-left:110px">
                                 <br>
-                                <!--<form name="signupForm" action="" method="POST">
+                                <form name="signupForm" action="" method="POST">
                                     {% csrf_token %}
                                     <div class="form-group">
                                         <div class="control-label">
@@ -117,14 +83,24 @@
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <div class="control-label">
+                                        <div id="first_name" class="hidden control-label">
+                                            {{ form.first_name }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div id="last_name" class="hidden control-label">
+                                            {{ form.last_name }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div id="password" class="hidden control-label">
                                             {{ form.password }}
                                         </div>
                                     </div>
                                     <br>
                                     <button id="login_button" type="submit" style="background-color:#8689d8;" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-bookmark"></span> SignUp/LogIn</button>
                                     <small id="id_mail" style="color:red">{{ error_message }}</small>
-                                </form>-->
+                                </form>
                             </div>
                         </div>
                     </div>

@@ -12,8 +12,8 @@
         webSocketBridge.listen(function(action, stream) {
             var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + action.user_name + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + action.message +  "</span></div></div></div>"
             $("#msg_content").append(content);
-        });
-        $("#friends").each(function() {
+
+        $(".friends").each(function() {
             $(this).click(function(e) {
                 var user_id = $(this).attr('data-href');
                 var url = "/dashboard/fetch_user/"
@@ -24,9 +24,10 @@
                     success: function(response){
                         response = JSON.parse(response)
                         if (response.status) {
+                            $("#msg_content").html("");
                             for (i = 0; i < response.data.length; i++) {
                                 // fetch the messages in json format response and then append them..
-                                var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + i.user_name + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + i.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + i.message +  "</span></div></div></div>"
+                                var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + response.data[i][0] + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + response.data[i][1] + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + response.data[i][3] +  "</span></div></div></div>"
                                 $("#msg_content").append(content);
                             } 
                         }
@@ -35,6 +36,7 @@
             })
         })
 
+        })
         webSocketBridge.socket.addEventListener('open', function() {
             console.log("Connected to WebSocket");
         })
@@ -54,7 +56,7 @@
                     document.getElementById("textbox").value = '';
                     if (msg != "") {
                         user_id = document.getElementById("textbox").getAttribute("user-id")
-
+                        console.log(user_id)
                         webSocketBridge.send({"user_name": user_name, "user_id": user_id, "user_initial": user_initial, "message": msg});
 
                         var url = "/dashboard/msg_sent/";
@@ -110,7 +112,7 @@
                     {% for user in users %}
                         <div class="chat__users">
                         <ul class="users">
-                            <li id="friends" data-href="{{ user.id }}" class="users__item users__item_group">
+                            <li data-href="{{ user.id }}" class="friends users__item users__item_group">
                             <div class="users__avatar avatar">
                                 <a id="user_avatar" class="avatar__wrap">
                                     {{ user.first_name|slice:':1'|title }}
@@ -148,7 +150,7 @@
                         </div>
                         <div class="chatbox__row chatbox__row_fullheight">
                             <div id="msg_content" class="chatbox__content">
-                                <div class="message">
+                                <!--<div class="message">
                                     <div class="message__head">
                                     <span class="message__note">{{ message.sender.first_name|title }}</span>
                                     <span class="message__note">{{ message.created_at }}</span>
@@ -163,7 +165,7 @@
                                         <span class="message__text">{{ message.message|safe }}</span>
                                     </div>
                                     </div>
-                                </div>
+                                </div>-->
                             </div>
                         </div>
                         <div class="chatbox__row">
@@ -174,7 +176,7 @@
                                     </button>
                                 </div>
                                 <div class="enter__textarea">
-                                    <textarea id="textbox" user-data="{{ user.first_name|upper }}" user-id="{{ user.id }}" user-initial="{{ user.first_name|slice:':1'|upper }}" name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
+                                    <textarea id="textbox" user-data="{{ user.first_name|upper }}" user-id="{{ friend_top.id }}" user-initial="{{ user.first_name|slice:':1'|upper }}" name="enterMessage" id="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
                                 </div>
                                 <div class="enter__icons">
                                     <a href="#" class="enter__icon">

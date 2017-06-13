@@ -24,10 +24,10 @@ def homepage(request):
         users = User.objects.all()
         form = UserForm(request.POST, use_required_attribute= False)
         if form.is_valid():
+            username = form.cleaned_data["email"]
+            password = form.cleaned_data["password"]
             if User.objects.filter(username=form.cleaned_data['email']).exists():
-                user = User.objects.get(username=form.cleaned_data['email'])
-                login(request, user)
-                return HttpResponseRedirect(reverse('dashboard'))
+                pass
             else:
                 user = User.objects.create_user(
                     username=form.cleaned_data['email'],
@@ -36,8 +36,9 @@ def homepage(request):
                     email=form.cleaned_data['email'],
                     password=form.cleaned_data['password'],
                 )
-                login(request, user)
-                return HttpResponseRedirect(reverse('dashboard'))
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            return HttpResponseRedirect(reverse('dashboard'))
         else:
             error_message = "Please fill the valid details."
             return render(request, 'mychannel/home.html', {'form': form, 'error_message': error_message})
@@ -98,12 +99,12 @@ def msg_sent(request):
     if request.is_ajax():
         login_user = request.user
         user_id = request.GET.get("user_id", "")
-        msg = request.GET.get("message", "")
+        message = request.GET.get("message", "")
         user = User.objects.get(id=user_id)
         msg = Message.objects.create(
             sender=login_user,
             reciever=user,
-            message=msg,
+            message=message,
         )
         created = msg.created_at.isoformat()
         response = {'status': True, 'data': created}
@@ -144,6 +145,7 @@ def fetch_user(request):
         for msg in messages:
             message = []
             message.append(msg.sender.first_name)
+            message.append(msg.sender.first_name[0])
             message.append(msg.reciever.first_name)
             message.append(msg.message)
             message.append(msg.created_at.isoformat())
