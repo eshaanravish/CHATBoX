@@ -293,6 +293,8 @@ button:focus {
 .chatbox__row_fullheight {
     flex: 1;
     overflow-y: auto;
+    position : relative; 
+    bottom:0;
 }
 
 .head {
@@ -358,13 +360,14 @@ button:focus {
 .message__head {
     /*display: flex;*/
     justify-content: space-between;
-    padding: 4px 80px 4px 50px;
+    padding: 1px 80px 1px 50px;
 }
 
 .message__note {
     opacity: 0.5;
     color: #5b6171;
     font-size: 12px;
+    text-transform: uppercase;
 }
 
 .message__date {}
@@ -439,6 +442,7 @@ button:focus {
     text-decoration: none;
     display: inherit;
     color: #fff;
+    text-transform: capitalize;
 }
 
 .avatar__img {

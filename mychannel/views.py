@@ -38,7 +38,22 @@ def homepage(request):
                 )
             user = authenticate(username=username, password=password)
             login(request, user)
-            return HttpResponseRedirect(reverse('dashboard'))
+            users = []
+            all_users = User.objects.all()
+            for i in all_users:
+                if i == request.user:
+                    continue
+                elif i == User.objects.get(is_superuser=True):
+                    continue
+                else:
+                    users.append(i)
+            messages = Message.objects.all().order_by("created_at")
+            if messages[0].sender == user:
+                friend_id = messages[0].reciever.id
+            else:
+                friend_id = messages[0].sender.id
+
+            return redirect('dashboard', user_id=friend_id)
         else:
             error_message = "Please fill the valid details."
             return render(request, 'mychannel/home.html', {'form': form, 'error_message': error_message})
@@ -48,50 +63,21 @@ def homepage(request):
         return render(request, 'mychannel/home.html', {'form':form})
 
 @login_required(login_url="/login/")
-def dashboard(request):
-    if request.is_ajax():
-        login_user = request.user
-        user_id = request.GET.get("userid", "")
-        user = User.objects.get(pk=user_id)
-        messages = Message.objects.filter(
-            Q (sender=login_user, reciever=user) |
-            Q (sender=user, reciever=login_user)).order_by("created_at")
-        message_all = []
-        message_content = []
-        message_all.append(user.first_name[0])
-        message_all.append(user.first_name)
-        message_all.append(user.last_name)
-        message_all.append(user.username)
-        for item in messages:
-            message_content.append(item.sender.first_name[0])
-            message_content.append(item.sender.first_name)
-            message_content.append(item.sender.last_name)
-            message_content.append(item.sender.username)
-            message_content.append(item.reciever.first_name[0])
-            message_content.append(item.reciever.first_name)
-            message_content.append(item.reciever.last_name)
-            message_content.append(item.reciever.username)
-            message_content.append(item.message)
-            message_content.append(item.created_at.isoformat())
-            message_all.append(message_content)
-        response = {'status': True, 'data': message_all}
-        return HttpResponse(json.dumps(response))
-    else:
-        login_user = request.user
-        users = []
-        all_users = User.objects.all()
-        for i in all_users:
-            if i == request.user:
-                continue
-            elif i == User.objects.get(is_superuser=True):
-                continue
-            else:
-                users.append(i)
-        friend = users[0]
-        messages = Message.objects.filter(
-            Q (sender=login_user, reciever=friend) |
-            Q (sender=friend, reciever=login_user)).order_by("created_at")
-        return render(request, 'mychannel/dashboard.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
+def dashboard(request, user_id):
+    users = []
+    all_users = User.objects.all()
+    for i in all_users:
+        if i == request.user:
+            continue
+        elif i == User.objects.get(is_superuser=True):
+            continue
+        else:
+            users.append(i)
+    friend = User.objects.get(id=user_id)
+    messages = Message.objects.filter(
+        Q (sender=request.user, reciever=friend) |
+        Q (sender=friend, reciever=request.user)).order_by("created_at")
+    return render(request, 'mychannel/dashboard.html', {'user': request.user, 'friend_top': friend, 'users': users, 'messages': messages})
 
 
 @login_required(login_url="/login/")
@@ -105,25 +91,6 @@ def msg_sent(request):
             sender=login_user,
             reciever=user,
             message=message,
-        )
-        created = msg.created_at.isoformat()
-        response = {'status': True, 'data': created}
-        return HttpResponse(json.dumps(response))
-    else:
-        return Http404
-
-
-@login_required(login_url="/login/")
-def msg_get(request):
-    if request.is_ajax():
-        login_user = request.user
-        user_id = request.GET.get("user_id", "")
-        msg = request.GET.get("message", "")
-        user = User.objects.get(pk=user_id)
-        msg = Message.objects.create(
-            sender=user,
-            reciever=login_user,
-            message=msg,
         )
         created = msg.created_at.isoformat()
         response = {'status': True, 'data': created}
