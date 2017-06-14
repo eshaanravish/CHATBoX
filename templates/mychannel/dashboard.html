@@ -20,24 +20,23 @@
             })
         })
 
-
         $("#scroll").animate({ scrollTop: $('#scroll')[0].scrollHeight}, 1000);
 
         const webSocketBridge = new channels.WebSocketBridge();
         webSocketBridge.connect('/ws/');
         webSocketBridge.listen(function(action, stream) {
             if (action.is_typing) {
-                user_name = document.getElementById("textbox").getAttribute("user-data")
-                if (user_name == action.user_name) {
-                    null
-                }
-                else {
-                    var content = "<small>" + action.user_name + " is typing... <span class='glyphicons glyphicons-pencil'></span></small>"
+                friend = document.getElementById("textbox").getAttribute("friend-name")
+                if (action.user_name == friend) {
+                    var content = "<small>" + action.user_name + " is typing...</small>"
                     $("#istyping").html(content);
                     $("#istyping").removeClass("hidden");
                     window.setTimeout(function(){
                         $("#istyping").addClass("hidden");
-                    }, 3500)
+                    }, 5000)
+                }
+                else {
+                    null
                 }
             }
             else {
@@ -45,7 +44,33 @@
                 var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + action.user_name + "</span><span class='message__note' style='float:right'>" + action.created_at + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + action.message +  "</span></div></div></div>"
                 $("#msg_content").append(content);
                 $("#scroll").animate({ scrollTop: $('#scroll')[0].scrollHeight}, 1000);
+                loggedin_user = document.getElementById("textbox").getAttribute("user-name") 
+                if (action.user_name == loggedin_user) {
+                    null
+                }
+                else {
+                    if (Notification) {
+                        if (Notification.permission !== "granted") {
+                            Notification.requestPermission(function(permission) {
+                                if(permission === "granted") {
+                                    var notification = new Notification(action.user_name, {
+                                        // icon: 'http://cdn.sstatic.net/stackexchange/img/logos/so/so-icon.png',
+                                        body: action.message,
+                                    });
+                                }
+                            });
+                        }
+
+                        if (Notification.permission === "granted") {
+                            var notification = new Notification(action.user_name, {
+                                // icon: 'http://cdn.sstatic.net/stackexchange/img/logos/so/so-icon.png',
+                                body: action.message,
+                            });
+                        }
+                    }
+                }
             }
+
 
         })
         webSocketBridge.socket.addEventListener('open', function() {
@@ -60,7 +85,7 @@
             $(this).keypress(function(e) {
                 if (e.keyCode === 13) {
                     e.preventDefault();
-                    user_name = document.getElementById("textbox").getAttribute("user-data")
+                    user_name = document.getElementById("textbox").getAttribute("user-name")
                     user_initial = document.getElementById("textbox").getAttribute("user-initial")
                     user_id = document.getElementById("textbox").getAttribute("friend-id")
 
@@ -95,9 +120,14 @@
                 }
                 else {
                     friend_name = document.getElementById("textbox").getAttribute("friend-name")
-                    user_name = document.getElementById("textbox").getAttribute("user-data")
+                    user_name = document.getElementById("textbox").getAttribute("user-name")
                     webSocketBridge.send({'is_typing': 'True', 'user_name': user_name, 'friend_name': friend_name});
                 }
+            })
+        })
+        $("#coming_soon").each(function() {
+            $(this).click(function(e) {
+                alert("Coming Soon...")
             })
         })
     }); 
@@ -174,7 +204,7 @@
                                     {{ friend_top.first_name|slice:':1'|upper }}
                                 </a>
                             </div>
-                            <div id="main_title" class="head__title">{{ friend_top.first_name|upper }}</div>
+                            <div id="main_title_name" class="head__title">{{ friend_top.first_name|upper }}</div>
                             </div>
                             <div id="main_title" class="head__title">{{ message.created_at }}</div>
                         </div>
@@ -211,13 +241,13 @@
                                     </button>
                                 </div>-->
                                 <div class="enter__textarea">
-                                    <textarea id="textbox" my-id="{{ user.id }}" user-data="{{ user.first_name|upper }}" friend-id="{{ friend_top.id }}" friend-name="{{ friend_top.first_name|upper }}" user-initial="{{ user.first_name|slice:':1'|upper }}" name="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
+                                    <textarea id="textbox" my-id="{{ user.id }}" user-name="{{ user.first_name|upper }}" friend-id="{{ friend_top.id }}" friend-name="{{ friend_top.first_name|upper }}" user-initial="{{ user.first_name|slice:':1'|upper }}" name="enterMessage" cols="30" rows="2" placeholder="Say message..."></textarea>
                                 </div>
                                 <div class="enter__icons">
-                                    <a href="#" class="enter__icon">
+                                    <a id="coming_soon" class="enter__icon">
                                     <i class="fa fa-paperclip" aria-hidden="true"></i>
                                     </a>
-                                    <a href="#" class="enter__icon">
+                                    <a id="coming_soon" class="enter__icon">
                                     <i class="fa fa-smile-o" aria-hidden="true"></i>
                                     </a>
                                 </div>
