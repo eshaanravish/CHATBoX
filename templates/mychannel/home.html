@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load staticfiles %}
+
 {% block title %}
     <title>Home</title>
 {% endblock %}
@@ -65,7 +67,10 @@
 
 {% block body %}
     <body>
-        <h1 id="font" class="font-bold" style="text-align:center; margin-top:80px">
+        <div style="text-align: center">
+            <img src="{% static 'mychannel/images/chatbox.png' %}" alt="CHATBoX" style="width:180px;">
+        </div>
+        <h1 id="font" class="font-bold" style="text-align:center; margin-top:8px; margin-bottom:25px">
             CHATBoX
         </h1>
         <div class="container" style="margin-top:20px">
@@ -83,6 +88,11 @@
                                         </div>
                                     </div>
                                     <div class="form-group">
+                                        <div id="password" class="control-label">
+                                            {{ form.password }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
                                         <div id="first_name" class="hidden control-label">
                                             {{ form.first_name }}
                                         </div>
@@ -92,13 +102,8 @@
                                             {{ form.last_name }}
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <div id="password" class="control-label">
-                                            {{ form.password }}
-                                        </div>
-                                    </div>
                                     <br>
-                                    <button id="login_button" type="submit" style="background-color:#8689d8;" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-bookmark"></span> SignUp/LogIn</button>
+                                    <button id="login_button" type="submit" style="background-color:#028bad;" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-bookmark"></span> SignUp/LogIn</button>
                                     <small id="id_mail" style="color:red">{{ error_message }}</small>
                                 </form>
                             </div>

@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.shortcuts import render
 import json
 
 from django.urls import reverse
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, \
 redirect, render_to_response, reverse
-from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import password_reset as django_password_reset
 from django.forms.models import model_to_dict
 from django.db.models import Q
 from django.contrib.auth.models import User
@@ -17,7 +15,7 @@ from django.contrib.auth.models import User
 from mychannel.models import Message
 
 from mychannel.forms import UserForm
-# Create your views here.
+
 
 def homepage(request):
     if request.method == "POST":
@@ -38,21 +36,13 @@ def homepage(request):
                 )
             user = authenticate(username=username, password=password)
             login(request, user)
-            users = []
-            all_users = User.objects.all()
-            for i in all_users:
-                if i == request.user:
-                    continue
-                elif i == User.objects.get(is_superuser=True):
-                    continue
-                else:
-                    users.append(i)
-            messages = Message.objects.all().order_by("created_at")
+            messages = Message.objects.filter(
+                Q (sender=user) |
+                Q (reciever=user)).order_by("-created_at")
             if messages[0].sender == user:
                 friend_id = messages[0].reciever.id
             else:
                 friend_id = messages[0].sender.id
-
             return redirect('dashboard', user_id=friend_id)
         else:
             error_message = "Please fill the valid details."
@@ -62,8 +52,28 @@ def homepage(request):
         form = UserForm(request.POST, use_required_attribute= False)
         return render(request, 'mychannel/home.html', {'form':form})
 
+
 @login_required(login_url="/login/")
 def dashboard(request, user_id):
+    friend = User.objects.get(id=user_id)
+    messages = Message.objects.filter(
+        Q (sender=request.user, reciever=friend) |
+        Q (sender=friend, reciever=request.user)).order_by("created_at")
+    for msg in messages:
+        msg.is_seen = True
+        msg.save()
+    m = messages.count()
+    if m > 15:
+        more_msg = True
+    else:
+        more_msg = False
+    n = (m - 15)
+    if n > 0:
+        last_msg = messages[n].created_at.isoformat()
+        messages = messages[n:]
+    else:
+        messages = []
+        last_msg = []
     users = []
     all_users = User.objects.all()
     for i in all_users:
@@ -72,13 +82,50 @@ def dashboard(request, user_id):
         elif i == User.objects.get(is_superuser=True):
             continue
         else:
-            users.append(i)
-    friend = User.objects.get(id=user_id)
-    messages = Message.objects.filter(
-        Q (sender=request.user, reciever=friend) |
-        Q (sender=friend, reciever=request.user)).order_by("created_at")
-    return render(request, 'mychannel/dashboard.html', {'user': request.user, 'friend_top': friend, 'users': users, 'messages': messages})
+            obj = []
+            count = 0
+            user_message = Message.objects.filter(sender=i, reciever=request.user)
+            for msg in user_message:
+                if not msg.is_seen:
+                    count = count + 1
+            obj.append(i)
+            obj.append(count)
+            users.append(obj)
+    return render(request, 'mychannel/dashboard.html', {'user': request.user, 'friend_top': friend, 'users': users, 'messages': messages, 'msg_count': m})
 
+
+@login_required(login_url="/login/")
+def load_messages(request):
+    if request.is_ajax:
+        user_id = request.GET.get("user_id", "")
+        last_msg = request.GET.get("last_msg_time", "")
+        count = request.GET.get("count", "")
+        friend = User.objects.get(id=user_id)
+        message = Message.objects.filter(
+            Q (sender=request.user, reciever=friend) |
+            Q (sender=friend, reciever=request.user)).order_by("-created_at")
+        total_msgs = message.count()
+        if total_msgs > int(count) + int(15):
+            message = message[int(count):int(count)+15]
+        else:
+            message = message[int(count):]
+        messages = []
+        for msg in message:
+            if msg:
+                mssg = []
+                mssg.append(msg.sender.first_name)
+                mssg.append(msg.sender.first_name[0])
+                mssg.append(msg.message)
+                mssg.append(msg.created_at.isoformat())
+                print mssg
+                messages.append(mssg)
+        if messages != []:
+            response = {'status': True, 'data': messages}
+        else:
+            response = {'status': False}
+        return HttpResponse(json.dumps(response))
+    else:
+        return Http404
 
 @login_required(login_url="/login/")
 def msg_sent(request):
@@ -92,6 +139,7 @@ def msg_sent(request):
             reciever=user,
             message=message,
         )
+        msg.is_sent = True
         created = msg.created_at.isoformat()
         response = {'status': True, 'data': created}
         return HttpResponse(json.dumps(response))
@@ -121,7 +169,6 @@ def fetch_user(request):
         return HttpResponse(json.dumps(response))
     else:
         return Http404
-    
 
 
 @login_required(login_url="/login/")
@@ -143,21 +190,6 @@ def dashboard_global(request):
     return render(request, 'mychannel/dashboard_global.html', {'user': login_user, 'friend_top': friend, 'users': users, 'messages': messages})
 
 
-
-@login_required(login_url="/login/")
-def chatter(request, user_id):
-    if request.is_ajax():
-        login_user = request.user
-        messages = Message.objects.filter(sender=login_user, reciever=user_id)
-        message_content = {'messages': messages}
-        for item in message_content:
-            item['messages'] = model_to_dict(item['messages'])
-        response = {'status': True, 'data': message_content}
-        return HttpResponse(json.dumps(response))
-    else:
-        Http404
-
-
 def user_check(request):
     if request.is_ajax():
         email = request.GET.get('email', '')
@@ -172,6 +204,7 @@ def user_check(request):
             return HttpResponse(json.dumps(response))
     else:
         Http404
+
 
 @login_required(login_url="/login/")
 def userlogout(request):

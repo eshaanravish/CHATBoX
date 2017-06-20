@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.forms import ModelForm
-from mychannel.models import IntegerValue, Message
+from mychannel.models import IntegerValue, Message, ChatboxUser
 
 
 class UserForm(ModelForm):
@@ -18,3 +18,16 @@ class UserForm(ModelForm):
         self.fields['last_name'].widget.attrs.update({'class': 'form-control', 'placeholder':'LastName'})
         self.fields['password'].widget.attrs.update({'class': 'form-control', 'placeholder':'Password'})
 
+
+class ChatboxUserForm(ModelForm):
+    picture = forms.ImageField(label='Select a file', help_text='max. 42 megabytes')
+
+    class Meta:
+        model = ChatboxUser
+        fields = ('picture', 'bio')
+
+
+    def __init__(self, *args, **kwargs):
+        super(ChatboxUserForm, self).__init__(*args, **kwargs)
+        self.fields['picture'].widget.attrs.update({'class': 'form-control'})
+        self.fields['bio'].widget.attrs.update({'class': 'form-control', 'placeholder':'Bio'})

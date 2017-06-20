@@ -8,6 +8,18 @@
 
 {% block script %}
 <script type="text/javascript">
+// window tab active-inactive check for notifications.
+    var isActive = true;
+
+    window.addEventListener('blur', function(e) {
+        isActive = false;
+    })
+
+    window.addEventListener('focus', function(e) {
+        isActive = true;
+    })
+
+// friends list to chat with.
     $(document).ready(function(){
         $(".friends").each(function() {
             $(this).click(function(e) {
@@ -16,73 +28,166 @@
             })
         })
 
-        $("#global").each(function() {
+// block notifications.
+        $("#block_notifications").each(function() {
             $(this).click(function(e) {
-                window.location.href = "/dashboard/global/"
+
             })
         })
 
-        $("#scroll").animate({ scrollTop: $('#scroll')[0].scrollHeight}, 1000);
 
-        const webSocketBridge = new channels.WebSocketBridge();
-        webSocketBridge.connect('/ws/');
-        webSocketBridge.listen(function(action, stream) {
-            if (action.is_typing) {
-                friend = document.getElementById("textbox").getAttribute("friend-name")
-                if (action.user_name == friend) {
-                    var content = "<small>" + action.user_name + " is typing...</small>"
-                    $("#istyping").html(content);
-                    $("#istyping").removeClass("hidden");
-                    window.setTimeout(function(){
-                        $("#istyping").addClass("hidden");
-                    }, 5000)
-                }
-                else {
+        // if (!$.browser.webkit) {
+        //     $('.wrapper').html('<p>Sorry! Non webkit users. :(</p>');
+        // }
+
+// scroller to get older messages.
+        $("#scroller").animate({ scrollTop: $('#scroller')[0].scrollHeight}, 500);
+
+        $("#scroller").on("scroll", function(e) {
+            var self = $(this)
+            var prevScroll = self.scrollTop();
+
+            if (self.scrollTop() === 0) {
+                var last_msg_time = document.getElementById("scroller").getAttribute("last-msg");
+                var total_msg = document.getElementById("scroller").getAttribute("msg-count")
+                var url = "/dashboard/load_messages/"
+                var count = $(".message").length
+                if (total_msg == count) {
                     null
+                } else {
+                    var user_id = document.getElementById("scroller").getAttribute("friend")
+                    $('#progress').removeClass("hidden");
+                    return $.ajax({
+                        url: url,
+                        type: 'GET',
+                        traditional: true,
+                        data: {"user_id": user_id, "count": count, "last_msg_time": last_msg_time},
+                        success: function(response){
+                            response = JSON.parse(response)
+                            if (response.status) {
+                                for (i=0; i<response["data"].length; i++) {
+                                    // date formation.
+                                    var d = response["data"][i][3];
+                                        // var month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                    // var date = month[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+                                    // var time = d.toLocaleString('en-US', { hour: 'numeric',minute:'numeric', hour12: true });
+                                    // var created_at = date + ", " + time;
+                                    $("#msg_content").removeClass("hidden");
+                                    $("#msg_content").prepend("<div class='message'><div class='message__head' align='center'></span></div><div class='message__base'><div class='message__avatar avatar'><a href='#' class='avatar__wrap'>" + response["data"][i][1] + "</a></div><div class='message__textbox'><span title='" + d + "' class='message__text'>" + response["data"][i][2] + "</span></div></div></div>")
+                                }
+                                $('#progress').addClass("hidden");
+                                self.scrollTop($(".message").height() * response["data"].length);
+                                msg_count = response["data"].length - 1
+                                last_msg_time = response["data"][msg_count][3]
+                            }
+                            else if (response.status == false) {
+                                $('#progress').addClass("hidden");
+                                var value = false;
+                            }
+                        }
+                    })
                 }
             }
-            else {
-                $("#istyping").addClass("hidden");
-                var content = "<div class='message'><div class='message__head'><span class='message__note'></span><span id='user_firstname' class='message__note'>" + action.user_name + "</span><span class='message__note' style='float:right'>" + action.created_at + "</span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' class='message__text'>" + action.message +  "</span></div></div></div>"
-                $("#msg_content").append(content);
-                $("#scroll").animate({ scrollTop: $('#scroll')[0].scrollHeight}, 1000);
-                loggedin_user = document.getElementById("textbox").getAttribute("user-name") 
-                if (action.user_name == loggedin_user) {
-                    null
+        })
+
+// websocetbridge to establish the channel.
+        const webSocketBridge = new channels.WebSocketBridge();
+        webSocketBridge.connect('/ws/');
+
+        // webSocketBridge.demultiplex('{{ user.id }}', function(action, stream) {
+        //     console.log(action, stream);
+        //     $("#istyping").addClass("hidden");
+        //     var content = "<div class='message'><div class='message__head'><span class='message__note'></span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' title='" + action.created_at + "' class='message__text'>" + action.message +  "</span></div></div></div>"
+        //     $("#msg_content").append(content);
+        //     loggedin_user = document.getElementById("textbox").getAttribute("user-name") 
+        // });
+// websocketbridge to listen to channel.
+        webSocketBridge.listen(function(action, stream) {
+
+// istyping check as well as the new message appending.
+            if (action.is_online == null) {
+                if (action.is_typing) {
+                    friend = document.getElementById("textbox").getAttribute("friend-name")
+                    if (action.user_name == friend) {
+                        var content = "<small>" + action.user_name + " is typing...</small>"
+                        $("#istyping").html(content);
+                        $("#istyping").removeClass("hidden");
+                        window.setTimeout(function(){
+                            $("#istyping").addClass("hidden");
+                        }, 4000)
+                    }
+                    else {
+                        null
+                    }
                 }
                 else {
-                    if (Notification) {
-                        if (Notification.permission !== "granted") {
-                            Notification.requestPermission(function(permission) {
-                                if(permission === "granted") {
+                    $("#istyping").addClass("hidden");
+                    var content = "<div class='message'><div class='message__head'><span class='message__note'></span></div><div class='message__base'><div class='message__avatar avatar'><a id='user_initial' class='avatar__wrap'>" + action.user_initial + "</a></div><div class='message__textbox'><span id='user_msg' title='" + action.created_at + "' class='message__text'>" + action.message +  "</span></div></div></div>"
+                    $("#msg_content").append(content);
+                    loggedin_user = document.getElementById("textbox").getAttribute("user-name") 
+                    if (action.user_name == loggedin_user) {
+                        null
+                    }
+                    else {
+                        if (isActive == false)  {
+                            // Notifications.
+                            if (Notification) {
+                                if (Notification.permission !== "granted") {
+                                    Notification.requestPermission(function(permission) {
+                                        if(permission === "granted") {
+                                            var notification = new Notification(action.user_name, {
+                                                icon: "{% static 'mychannel/images/chatbox.png' %}",
+                                                body: action.message,
+                                            });
+                                        }
+                                    });
+                                }
+                                if (Notification.permission === "granted") {
                                     var notification = new Notification(action.user_name, {
                                         icon: "{% static 'mychannel/images/chatbox.png' %}",
                                         body: action.message,
                                     });
                                 }
-                            });
-                        }
-
-                        if (Notification.permission === "granted") {
-                            var notification = new Notification(action.user_name, {
-                                icon: "{% static 'mychannel/images/chatbox.png' %}",
-                                body: action.message,
-                            });
+                            }
                         }
                     }
                 }
             }
 
-
+// friend online check.
+            if (action.is_online) {
+                n = $("#status").length
+                for (i=0; i<n; i++) {
+                    if ( document.getElementById("status").getAttribute("user-id") == action.user_id) {
+                        $("#status").removeClass("hidden")
+                    }
+                }
+            }
+            else {
+                n = $("#status").length
+                for (i=0; i<n; i++) {
+                    if ( document.getElementById("status").getAttribute("user-id") == action.user_id) {
+                        $("#status").addClass("hidden")
+                    }
+                }
+            }
         })
+
+// websocketbridge channel/connection establishment.
         webSocketBridge.socket.addEventListener('open', function() {
             console.log("Connected to WebSocket");
+            var user_id = document.getElementById("textbox").getAttribute("my-id");
+            webSocketBridge.send({"is_online": true, "user_id": user_id});
         })
 
+// websocketbridge channel/connection closed.
         webSocketBridge.socket.addEventListener('close', function() {
             console.log("Disonnected from WebSocket");
+            var user_id = document.getElementById("textbox").getAttribute("my-id");
+            webSocketBridge.send({"is_online": false, "user_id": user_id});
         })
 
+// the textarea keypress events.
         $("#textbox").each(function() {
             $(this).keypress(function(e) {
                 if (e.keyCode === 13) {
@@ -91,7 +196,9 @@
                     user_initial = document.getElementById("textbox").getAttribute("user-initial")
                     user_id = document.getElementById("textbox").getAttribute("friend-id")
 
+                    // date formation.
                     var d = new Date();
+                    console.log(d)
                     var month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                     var date = month[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
                     var time = d.toLocaleString('en-US', { hour: 'numeric',minute:'numeric', hour12: true });
@@ -127,11 +234,6 @@
                 }
             })
         })
-        $("#coming_soon").each(function() {
-            $(this).click(function(e) {
-                alert("Coming Soon...")
-            })
-        })
     }); 
 </script>
 {% endblock %}
@@ -151,7 +253,7 @@
         </nav>
         <div>
             <div class="modal__dialog">
-                <div class="modal__content chat">
+                <div class="modal__content chat col-md-10 col-md-offset-1" style="padding: 0%">
                 <div class="modal__sidebar">
                     <div class="chat__search search">
                     <div class="search">
@@ -171,21 +273,21 @@
                             </li>
                         </ul>
                         </div>-->
-                    {% for user in users %}
+                    {% for user, count in users %}
                         <div class="chat__users">
                         <ul class="users">
                             <li data-href="{{ user.id }}" class="friends users__item users__item_group">
-                            <div class="users__avatar avatar">
-                                <a id="user_avatar" class="avatar__wrap">
-                                    {{ user.first_name|slice:':1'|title }}
-                                </a>
-                            </div>
-                            <span id="user_avatar_name" class="users__note">{{ user.first_name|title }} {{ user.last_name }}</span>
-                            <div class="users__counter">
-                                <span class="counter">
-                                    <!--display the number of unread messages here-->
-                                </span>
-                            </div>
+                                <div class="users__avatar avatar">
+                                    <a id="user_avatar" class="avatar__wrap">
+                                        {{ user.first_name|slice:':1'|title }}
+                                    </a>
+                                </div>
+                                <span class="users__note">{{ user.first_name|title }} {{ user.last_name }} <small id="status" class="hidden online__status" user-id="{{ user.id }}"> (Online)</small></span>
+                                {% if count %}
+                                    <div class="users__counter">
+                                        <span class="counter">{{ count }}</span>
+                                    </div>
+                                {% endif %}
                             </li>
                             <!--<li class="users__item">-->
                             <!--<div class="users__avatar avatar avatar_online">
@@ -208,28 +310,32 @@
                             </div>
                             <div id="main_title_name" class="head__title">{{ friend_top.first_name|upper }}</div>
                             </div>
-                            <div id="main_title" class="head__title">{{ message.created_at }}</div>
                         </div>
-                        <div id="scroll" class="chatbox__row chatbox__row_fullheight">
-                            <div id="msg_content" class="chatbox__content">
-                            {% for message in messages %}
-                                <div class="message">
-                                    <div class="message__head">
-                                    <span class="message__note">{{ message.sender.first_name|title }}</span>
-                                    <span class="message__note" style="float:right">{{ message.created_at }}</span>
+                        <div id="progress" class="hidden col-md-8 col-md-offset-4">
+                            <img align="middle" width="249" height="20" src="{% static 'mychannel/images/ajax-loader1.gif' %}"/>
+                        </div>
+                        <div id="scroller" style="margin-bottom: 22px; margin-top: 8px" last-msg="{{ last_msg }}" friend="{{ friend_top.id }}" more-msg="{{ more_msg }}" msg-count="{{ msg_count }}" class="chatbox__row chatbox__row_fullheight scrollbar">
+                            <div id="msg_content" class="chatbox__content force-overflow">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="message">
+                                        <!--<div style="text-align: center;" class="message__head">
+                                        <span class="message__note">{{ message.sender.first_name|title }}</span>
+                                        <span class="message__note">{{ message.created_at }}</span>
+                                        </div>-->
+                                        <div class="message__base">
+                                        <div class="message__avatar avatar">
+                                            <a href="#" class="avatar__wrap">
+                                                {{ message.sender.first_name|slice:':1'|title }}
+                                            </a>
+                                        </div>
+                                        <div class="message__textbox">
+                                            <span class="message__text" title="{{ message.created_at }}">{{ message.message|safe }}</span>
+                                        </div>
+                                        </div>
                                     </div>
-                                    <div class="message__base">
-                                    <div class="message__avatar avatar">
-                                        <a href="#" class="avatar__wrap">
-                                            {{ message.sender.first_name|slice:':1'|title }}
-                                        </a>
-                                    </div>
-                                    <div class="message__textbox">
-                                        <span class="message__text">{{ message.message|safe }}</span>
-                                    </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                             </div>
                         </div>
                         <div class="chatbox__row">

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 
 # Register your models here.
-from .models import Message, IntegerValue
+from .models import Message, IntegerValue, ChatboxUser
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -17,3 +17,10 @@ class IntegerValueAdmin(admin.ModelAdmin):
     list_display = ('name', 'value')
 
 admin.site.register(IntegerValue, IntegerValueAdmin)
+
+
+
+class ChatboxUserAdmin(admin.ModelAdmin):
+    list_display = ('user', 'bio')
+
+admin.site.register(ChatboxUser, ChatboxUserAdmin)
