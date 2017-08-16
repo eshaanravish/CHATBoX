@@ -39,10 +39,14 @@ def homepage(request):
             messages = Message.objects.filter(
                 Q (sender=user) |
                 Q (reciever=user)).order_by("-created_at")
-            if messages[0].sender == user:
-                friend_id = messages[0].reciever.id
+            if messages:
+                if messages[0].sender == user:
+                    friend_id = messages[0].reciever.id
+                else:
+                    friend_id = messages[0].sender.id
             else:
-                friend_id = messages[0].sender.id
+                friend = User.objects.all().exclude(id=request.user.id, is_superuser=True)
+                friend_id = friend[0].id
             return redirect('dashboard', user_id=friend_id)
         else:
             error_message = "Please fill the valid details."
