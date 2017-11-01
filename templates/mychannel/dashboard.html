@@ -175,16 +175,16 @@
 
 // websocketbridge channel/connection establishment.
         webSocketBridge.socket.addEventListener('open', function() {
-            console.log("Connected to WebSocket");
             var user_id = document.getElementById("textbox").getAttribute("my-id");
             webSocketBridge.send({"is_online": true, "user_id": user_id});
+            console.log("Connected to WebSocket");
         })
 
 // websocketbridge channel/connection closed.
         webSocketBridge.socket.addEventListener('close', function() {
-            console.log("Disonnected from WebSocket");
             var user_id = document.getElementById("textbox").getAttribute("my-id");
             webSocketBridge.send({"is_online": false, "user_id": user_id});
+            console.log("Disonnected from WebSocket");
         })
 
 // the textarea keypress events.
@@ -209,22 +209,8 @@
                     if (msg != "") {
                         friend_name = document.getElementById("textbox").getAttribute("friend-name")
 
-                        webSocketBridge.send({"user_name": user_name, "friend_name": friend_name, "user_initial": user_initial, "message": msg, "created_at": created_at});
+                        webSocketBridge.send({"user_name": user_name, "user_id": user_id, "login_user": {{user.id}}, "friend_name": friend_name, "user_initial": user_initial, "message": msg, "created_at": created_at});
 
-                        var url = "/dashboard/msg_sent/";
-                        $.ajax({
-                            url: url,
-                            type: 'GET',
-                            traditional: true,
-                            data: {"user_name": user_name, "user_id": user_id, "user_initial": user_initial, "message": msg},
-                            success: function(response){
-                                response = JSON.parse(response)
-                                if (response.status) {
-                                    // $("#main_head").html(response.data[0].toUpperCase())
-                                    // $("#main_title").html(response.data[1].toUpperCase())
-                                }
-                            }
-                        })
                     }
                 }
                 else {

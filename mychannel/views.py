@@ -16,7 +16,7 @@ from mychannel.models import Message
 
 from mychannel.forms import UserForm
 
-
+# homepage login and signup
 def homepage(request):
     if request.method == "POST":
         users = User.objects.all()
@@ -67,23 +67,22 @@ def dashboard(request, user_id):
         msg.is_seen = True
         msg.save()
     m = messages.count()
-    if m > 15:
-        more_msg = True
-    else:
-        more_msg = False
+    # if m > 15:
+    #     more_msg = True
+    # else:
+    #     more_msg = False
     n = (m - 15)
     if n > 0:
-        last_msg = messages[n].created_at.isoformat()
+        # last_msg = messages[n].created_at.isoformat()
         messages = messages[n:]
     else:
-        messages = []
-        last_msg = []
+        pass
     users = []
     all_users = User.objects.all()
     for i in all_users:
         if i == request.user:
             continue
-        elif i == User.objects.get(is_superuser=True):
+        elif i.is_superuser:
             continue
         else:
             obj = []
@@ -121,7 +120,6 @@ def load_messages(request):
                 mssg.append(msg.sender.first_name[0])
                 mssg.append(msg.message)
                 mssg.append(msg.created_at.isoformat())
-                print mssg
                 messages.append(mssg)
         if messages != []:
             response = {'status': True, 'data': messages}
